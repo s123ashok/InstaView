@@ -8,10 +8,12 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.sashok.instaview.Photo;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
 
 /**
  * Created by asmurthy on 12/2/15.
@@ -22,24 +24,56 @@ public class InstagramPhotoAdapter extends ArrayAdapter<Photo> {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View view, ViewGroup parent) {
 
-        Photo photo = getItem(position );
-        if (convertView == null){
-            convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_photo,parent,false);
-
+        ViewHolder holder;
+        if (view != null) {
+            holder = (ViewHolder) view.getTag();
+        } else {
+            view = LayoutInflater.from(getContext()).inflate(R.layout.item_photo, parent, false);
+            holder = new ViewHolder(view);
+            view.setTag(holder);
         }
-        TextView tvCaption = (TextView)convertView.findViewById(R.id.tvCaption);
-        ImageView ivPhoto = (ImageView)convertView.findViewById(R.id.ivPhoto);
 
-        tvCaption.setText(photo.caption);
+        Photo photo = getItem(position);
+
+        holder.tvCaption.setText(photo.caption);
+        holder.tvUser.setText(photo.userName);
+        holder.tvLikes.setText(
+                "Likes: " + Integer.toString(photo.likesCount) +
+                 " ..." + photo.timestamp
+        );
+        holder.tvCommentsCount.setText("Comments: " + photo.commentsCount);
+        holder.tvComment1.setText(photo.comment1);
+        holder.tvComment2.setText(photo.comment2);
+
         //clear the image.. clean it
         //ivPhoto.setImageResource(0);
-
         //Insert the image using picasso
-        Picasso.with(getContext()).load(photo.imageUrl).into(ivPhoto);
+        Picasso.with(getContext())
+                .load(photo.imageUrl)
+                .fit()
+                .placeholder(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher)
+                .centerCrop()
+                .into(holder.ivPhoto);
+        Picasso.with(getContext()).load(photo.userImageUrl).into(holder.ivUser);
 
-        return convertView;
+        return view;
+    }
+    static class ViewHolder {
+        @Bind(R.id.tvUser) TextView tvUser;
+        @Bind(R.id.tvLikes) TextView tvLikes;
+        @Bind(R.id.tvCaption) TextView tvCaption;
+        @Bind(R.id.ivPhoto) ImageView ivPhoto;
+        @Bind(R.id.ivUser) ImageView ivUser;
+        @Bind(R.id.tvCommentsCount) TextView tvCommentsCount;
+        @Bind(R.id.tvComment1) TextView tvComment1;
+        @Bind(R.id.tvComment2) TextView tvComment2;
+
+        public ViewHolder(View view) {
+            ButterKnife.bind(this, view);
+        }
     }
 }
 

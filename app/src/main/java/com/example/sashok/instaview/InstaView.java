@@ -1,7 +1,9 @@
 package com.example.sashok.instaview;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.AppCompatActivity;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.widget.ListView;
 
@@ -14,26 +16,55 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import cz.msebera.android.httpclient.Header;
+
+import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 
 public class InstaView extends AppCompatActivity {
 
     public static final String CLIENT_ID = "5e4bb8b442144e2cad975512543ecdb8";
     private ArrayList<Photo> photos;
-    private InstagramPhotoAdapter photoAdapter ;
+    private InstagramPhotoAdapter photoAdapter;
+
+
+    @Bind(R.id.lvPhotos)
+    ListView lvPhotos;
+    @Bind(R.id.swipeContainer)
+    SwipeRefreshLayout swipeContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_insta_view);
         photos = new ArrayList<>();
-        photoAdapter = new InstagramPhotoAdapter(this,photos);
+        photoAdapter = new InstagramPhotoAdapter(this, photos);
 
-        ListView lvPhotos = (ListView)findViewById(R.id.lvPhotos);
+
+        //ListView lvPhotos = (ListView)findViewById(R.id.lvPhotos);
+        ButterKnife.bind(this);
         lvPhotos.setAdapter(photoAdapter);
 
-        fetchPhotos();
-        
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // Your code to refresh the list here.
+                // Make sure you call swipeContainer.setRefreshing(false)
+                // once the network request has completed successfully.
+                //fetchTimelineAsync(0);
+                fetchPhotos();
+            }
+        });
+        // Configure the refreshing colors
+        swipeContainer.setColorSchemeResources(android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light);
+
+
+        //fetchPhotos();
+
     }
 
     private void fetchPhotos() {
@@ -48,7 +79,7 @@ public class InstaView extends AppCompatActivity {
          */
         String url = "https://api.instagram.com/v1/media/popular?client_id=" + CLIENT_ID;
         AsyncHttpClient client = new AsyncHttpClient();
-        client.get(url,null,new JsonHttpResponseHandler(){
+        client.get(url, null, new JsonHttpResponseHandler() {
             //success
 
             @Override
@@ -58,18 +89,30 @@ public class InstaView extends AppCompatActivity {
                 JSONArray itemArray = null;
                 try {
                     itemArray = response.getJSONArray("data");
-                    for (int i =0; i < itemArray.length(); i++){
+                    for (int i = 0; i < itemArray.length(); i++) {
                         JSONObject obj = itemArray.getJSONObject(i);
 
-                        if(i<10) {
-                            Photo p = new Photo();
-                            p.userName = obj.getJSONObject("user").getString("username");
-                            p.caption = obj.getJSONObject("caption").getString("text");
-                            p.imageUrl = obj.getJSONObject("images").getJSONObject("standard_resolution").getString("url");
-                            p.imageHeight = obj.getJSONObject("images").getJSONObject("standard_resolution").getInt("height");
-                            p.likesCount = obj.getJSONObject("likes").getInt("count");
-                            photos.add(p);
-                        }
+                        // if(i<10) {
+                        Photo p = new Photo();
+                        p.userName = obj.getJSONObject("user").getString("username");
+                        p.caption = obj.getJSONObject("caption").getString("text");
+                        p.imageUrl = obj.getJSONObject("images").getJSONObject("standard_resolution").getString("url");
+                        p.imageHeight = obj.getJSONObject("images").getJSONObject("standard_resolution").getInt("height");
+                        p.likesCount = obj.getJSONObject("likes").getInt("count");
+                        p.userImageUrl = obj.getJSONObject("user").getString("profile_picture");
+                        String strTime = obj.getString("created_time");
+                        long time = Long.parseLong(strTime) * 1000;
+                        p.timestamp = (String) DateUtils.getRelativeTimeSpanString(time, System.currentTimeMillis(), MINUTE_IN_MILLIS);
+                        p.commentsCount = Integer.parseInt(obj.getJSONObject("comments").getString("count"));
+                        JSONArray commentArray = null;
+
+
+                        commentArray = obj.getJSONObject("comments").getJSONArray("data");
+                        p.comment1 = commentArray.getJSONObject(commentArray.length() - 1).getString("text");
+                        p.comment2 = commentArray.getJSONObject(commentArray.length() - 2).getString("text");
+
+                        photos.add(p);
+                        //}
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();

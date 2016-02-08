@@ -27,4 +27,8 @@ dependencies {
     compile 'com.loopj.android:android-async-http:1.4.9'
     // Load remote images .. has caching
     compile 'com.squareup.picasso:picasso:2.5.2'
+    // Load ButterKnife
+    compile 'com.jakewharton:butterknife:7.0.1'
+    // RoundedImageview
+    compile 'com.makeramen:roundedimageview:2.2.1'
 }
